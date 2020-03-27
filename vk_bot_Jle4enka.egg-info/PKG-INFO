@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: vk-bot-Jle4enka
+Version: 0.0.1
+Summary: Package for creating VK bots
+Home-page: https://github.com/Rhinik/vk_bot
+Author: Yan
+Author-email: deknowny@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
