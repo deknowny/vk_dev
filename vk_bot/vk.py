@@ -7,7 +7,6 @@ import time
 import requests
 
 
-
 class Auth:
     """
     Auth to vk by token.
@@ -41,7 +40,7 @@ class Auth:
             **data
         }
         self._request_wait()
-        resp = r.post(url + method, data=api_data).json()
+        resp = r.post(url + method, api_data).json()
 
         if 'error' in resp:
             raise VkErr(resp)
@@ -116,26 +115,79 @@ class LongPoll:
     """
     LongPoll scheme
     """
+
+    def __init__(
+            self, auth,
+            faileds=[], **kwargs
+        ):
+        self.auth = auth
+        self.faileds = faileds
+        self.start_settings = kwargs
+        se;f.ractions = []
+
     def __getattr__(self, event_name):
         """
         Get handling event
         """
-        def cond(func):
-            """
-            Function-decorator for reaction function
-            """
-            def wrapper(event, pl):
-                """
-                New function with type event checking
-                """
-                if ... == event_name: # idk
-                    func()
+        ...
 
-            wrapper.event = func.event
-            wrapper.pl = func.pl
+    def __call__(self, **kwargs):
+        """
+        Init LongPoll listening
+        """
+        ## Yours settings
+        self.lp_settings = kwargs
+        ## Intermediate lp params like server, ts and key
+        self.lp_info = self.auth(self._method_name, kwargs)
 
-            return wrapper
+        while True:
+            ## Lp events
+            self.lp = r.post(
+                    url=server,
+                    data={**lp_info, **kwargs}
+                )
+            self._failed_handler()
+            ## Reaction
 
-        return cond
 
-        ## So hard make this
+
+    def _failed_handler(self):
+        """
+        Catch lp faileds
+        """
+        if 'failed' in self.lp:
+            if self.lp['failed'] in self.faileds:
+                self._failed_resolving()
+
+            else:
+                raise VkErr(str(self.lp))
+
+        else:
+            self.lp_info['ts'] = self.lp['ts']
+
+    def _failed_resolving(self):
+        """
+        Resolve faileds problems
+        """
+        if self.lp['failed'] == 1:
+            self.lp_info['ts'] = self.lp['ts']
+
+        elif self.lp['failed'] in (2, 3):
+            self.lp_info = self.auth(
+                    self._method_name,
+                    kwargs
+                )
+
+        elif self.lp['failed'] == 4:
+            self.lp_settings['version'] = self.lp['max_version']
+
+
+
+    def _method_name(self):
+        """
+        Choose method for users and groups
+        """
+        if self.auth.type == 'group':
+            return 'groups.getLongPollServer'
+        else:
+            return 'messages.getLongPollServer'
