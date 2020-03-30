@@ -6,7 +6,7 @@ class DotDict(dict):
     """
 
     def __init__(self, d):
-        super().__init__(self)
+        super().__init__(d)
 
     def __getattr__(self, value):
         """

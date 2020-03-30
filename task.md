@@ -20,7 +20,7 @@ lp = handler.LongPoll()
 @db.users.mute(False)
 @verified(False)
 @has_followers(1000)
-@gender.male
+@gender.male()
 @older(16)
 @subscribed(True)
 @path.direct()
@@ -45,8 +45,8 @@ def hello(event, pl):
 if __name__ == '__main__':
     lp() ## Should be args
 ```
-
-# Реализация возможности декорирования
+# *Мысли вслух*
+## Реализация возможности декорирования
 > Почему вообще над этим стоит заострять внимание? Я хочу сделать так, чтобы обратотка события не уступала обычной ветке условий, но и выигрывала в этом
 
 > И еще одно отступление -- в контексте моего пакета декоратор для реакций имеют немного другую суть, нежели то, как он используется обычно. Это не совсем _фабрика_ новых функций, это скорее предварительные ~ласки~ проверки. Они __не__ создают новую функцию, а лишь являются атрибутом уже созданной. Сама суть подобного декоратора используется из-за синтаксического сахара. Только из-за возможности не награмождать ваш код условиями для исполнения (что в ботах для вк используется __постоянно__), а вынести все в это в некую _пачку_ и просто поместить _над_ функцией.
@@ -121,8 +121,290 @@ reactions = {
 }
 ```
 У нас есть две функции, которые работают в беседе и одна в лс. Две ветки для if-elif. Мы имеем два одинаковых декоратора с одинаковыми условиями на проверку. Соотвественно, мы должны проверить его единожды и получить сразу две функции, при этом исключить 1 (тк она в лс), либо наоборот. Тупик... Я не хочу делать создание своих декораторов тяжелой работой и их понимание оставить в такой же просто форме, при этом сделать так, чтобы эта структура не уступала if-ветке. Неужели единственный выход -- проработать все известные декораторы а уже потом разобраться? Нет.
-динственный параметр, который нужно задать декоратору дополнительно -- исключение остальных значений при несоответствии. По итогу -- мы должно создать класс, реализующий `__call__`. Сделаем набросок функции, которую мы должны сделать.
+
+На утро следующего дня мне пришла мысль, и я попытался разложить выше данный пример в подобный словарь
 ```python
-def path():
+reactions = {
+    'message_new': [
+        {
+            'func': path,
+            'attrs': ['chat'],
+            'args': [],
+            True: [func1, func2],
+            False: [func3]
+
+        },
+        {
+            'func': path,
+            'attrs': ['direct'],
+            'args': [],
+            True: [func3],
+            False: [func1, func2]
+
+        },
+        {
+            'func': prefix,
+            'attrs': [],
+            'args': ['/'],
+            True: [func1, func2],
+            False: [func3, func2]
+        },
+        {
+            'func': prefix,
+            'attrs': [],
+            'args': ['.'],
+            True: [func3, func2],
+            False: [func1, func2]
+        }
+    ]
+}
+```
+Очевидно, что структура не совершенна. `@path.chat()` и `@path.direct()` взаимоисключающие. Но как это понять? Стоит внимательно посмотреть на реакции, возвращающиеся взаимоисключаемым. Они зеркальны, и это зацепка. Значит ли это, что любые взаимоисключаемые вот так вот зекральны? Давайте разеберем более серьзеный пример
+```python
+
+@gender.male()
+@by.user()
+@command('rand')
+@prefix('&')
+@path.chat()
+@lp.message_new()
+def func1(): pass
+
+
+@by.group()
+@command('time')
+@prefix('/')
+@path.chat()
+@lp.message_new()
+def func2(): pass
+
+@gender.female()
+@by.user()
+@prefix('.')
+@path.chat()
+@lp.message_new()
+def func3(): pass
+
+@subscribed(True)
+@msg.len(0)
+@payload(key='start', value=True)
+@path.direct()
+@lp.message_new()
+def func4(): pass
+
+@subscribed(True)
+@command('hello')
+@lp.message_new()
+def func5(): pass
+
+```
+```python
+reactions = {
+    'message_new': [
+        ## Это аналог ветки if-else,
+        ## Которая сейчас представлена
+        ## как if-elif, что требует оптимизации
+        {
+            'func': path,
+            'attrs': ['chat'],
+            'args': [],
+            True: [
+                func1,
+                func2,
+                func3,
+                func5
+            ],
+            False: [
+                func4,
+                func5
+            ]
+        },
+        {
+            'func': path,
+            'attrs': ['direct'],
+            'args': [],
+            True: [
+                func4,
+                func5
+            ],
+            False: [
+                func1,
+                func2,
+                func3,
+                func5
+            ]
+        },
+
+        ## Не взаимоисключающеся себя случаи
+        ## в ветках False.
+        ## Такое невозможно оптимизировать,
+        ## поэтому подобные условия
+        ## нужно проверять полностью,
+        ## т.е. каждый случай
+        ##
+        ## Эти случаи находятся
+        ## в сестрицких ветках if-elif
+        {
+            'func': prefix,
+            'attrs': [],
+            'args': ['/'],
+            True: [
+                func2,
+                func4,
+                func5
+            ],
+            False: [
+                func1,
+                func3,
+                func4,
+                func5
+            ]
+        ## func1, func3 не подойдут,
+        ## если ни один из других
+        ## @prefix оберток не подойдет к нему
+        },
+        {
+            'func': prefix,
+            'attrs': [],
+            'args': ['.'],
+            True: [
+                func3,
+                func4,
+                func5
+            ],
+            False: [
+                func1,
+                func2,
+                func4,
+                funс5
+            ]
+        ## Здесь с func1, func2 аналогично
+        },
+        {
+            'func': prefix,
+            'attrs': [],
+            'args': ['&'],
+            True: [
+                func1,
+                func4,
+                func5
+            ],
+            False: [
+                func2,
+                func3,
+                func4,
+                func5
+            ]
+        },
+
+        ## Взаимосключающие (if-else)
+        {
+            'func': by,
+            'attrs': ['user'],
+            'args': [],
+            True: [
+                func1,
+                func3,
+                func4,
+                func5
+            ],
+            False: [
+                func2,
+                func4,
+                func5
+            ]
+        },
+        {
+            'func': by,
+            'attrs': ['group'],
+            'args': [],
+            True: [
+                func2,
+                func4,
+                func5
+
+            ],
+            False: [
+                func1,
+                func3,
+                func4,
+                func5
+
+            ]
+        },
+
+        {
+            ... ## Суть ясна
+        }
+
+    ]
+}
+```
+А если нам нужена функция, которая всегда будет исполняться при `message_new`? Стоит сделать содержимое message_new словарем. Одна пара будет для вот такого разбора, другая пара (имеется ввиду ключ-значени) для уже готовых к исполнению функций. Имеет смысл использовать множества в параметрах True/False. Потом уже из этого делать список и пробегаться по нему.
+
+```python
+    reactions = {
+        'message_new': {
+            'check': [...],
+            'ready': [funcN] # Уже готовые функции
+        }
+    }
+```
+
+```python
+import vk_bot
+from vk_bot import (
+    prefix
+)
+vk, handler = vk_bot.Auth(
+    ...
+)
+lp = hadndler.LongPoll(
+    ...
+)
+
+@prefix('/')
+@lp.message_new
+def func(event, pl): ...
+
+@prefix('.')
+@lp.message_new
+def func2(event, pl): ...
+
+
+```
+Набросок итогового класса
+```python
+class Prefix(Condition): # Condition -- будущий класс-фабрика
+    max_values = 0
+
+    def __call__(self, *args):
+        self._prefixes = args
+
+        self.__call__ = self.call_handler
+        return self
+
+    def code(self, event, pl):
+        for i in self._prefixes:
+            if event.object.message.text.startwith(i):
+                return True
+        return False
+
+
+
+prefix = Prefix()
+```
+```python
+from abc import ABC, abstractmethod, abstractproperty
+
+class Condition(object, ABC):
+
+    @abstractproperty
+    def max_values(): pass
+
+    @abstractmethod
+    def code(): pass
+
+    def call_handler(func): pass
 
 ```
