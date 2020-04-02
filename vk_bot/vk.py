@@ -3,6 +3,7 @@ from .tools import url, peer
 from .DotDict import DotDict
 
 import time
+import json
 
 import requests as r
 
@@ -28,6 +29,7 @@ class Auth:
         self.group_id = abs(group_id)
         self.type = self._type()
         self._last_request = time.time()
+        self._frezze_time = 1/3 if self.type == 'user' else 1/20
 
     def __call__(self, method, data):
         """
@@ -55,13 +57,12 @@ class Auth:
         """
         Pause between requests
         """
-        freeze_time = 0.334
         now = time.time()
         diff = now - self._last_request
 
-        if diff < freeze_time:
-            time.sleep(freeze_time - diff)
-            self._last_request = now + freeze_time
+        if diff < self._freeze_time:
+            time.sleep(self._freeze_time - diff)
+            self._last_request = now + self._freeze_time
 
     def _type(self):
         if self.group_id:
@@ -321,3 +322,6 @@ class ReactionHandler:
         func.pl_gen = self.pl_gen
 
         return func
+
+class Keyboard:
+    def __init__(self, kb={}):
