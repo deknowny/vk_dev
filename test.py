@@ -1,35 +1,55 @@
-class DotDict(dict):
+from vk_bot import (
+    Auth, Condition
+)
+
+api, handler = Auth(
+    token='d02a9baaf2d510c55a49f0403bbb80eb816aed271de9ae5385f75e3342bbcc77541a9bd22933968d2efa7',
+    v=5.103,
+    group_id=192979547
+)
+
+
+lp = handler.LongPoll()
+
+class Prefix(Condition):
     """
-    Wrapper for dictioanries for calling elements by dot,
-    also work like ordinary dict.
-    Work correctly if all elements are primitives
+    Check how message start
     """
+    # max_values = 0
+    # true_one_time = True
 
-    def __init__(self, d):
-        super().__init__(d)
+    def __call__(self, *prefixes):
+        self._prefixes = prefixes
+        self._call_switch()
 
-    def __getattr__(self, value):
-        """
-        Congested for dot-syntax
-        """
-        return self._get_value(self[value])
+        return self
 
-    def _get_value(self, value):
-        """
-        Return dict that wrapped in DotDict
-        """
-
-        if isinstance(value, dict):
-            return self.__class__(value)
-
-        elif isinstance(value, list):
-            return [self._get_value(i) for i in value]
-
-        return value
+    def code(self, event, pl):
+        if event.object.message.text.startswith(self._prefixes):
+            return True
+        return False
 
 
-di = DotDict({
-    "key": [{"egg": {"bar": [1,2,[1,2,3]]}}]
-})
-print(di['key'])
-print(di.key[0].egg.bar[2][2])
+
+prefix = Prefix()
+
+@prefix('/')
+@lp.message_new()
+def react(event, pl):
+    api.messages.send(
+        peer_id=447532348,
+        message='Hello there',
+        random_id=0
+    )
+
+@prefix('.')
+@lp.message_new()
+def ree(event, pl):
+    api.messages.send(
+        peer_id=447532348,
+        message='How are you?',
+        random_id=0
+    )
+
+if __name__ == '__main__':
+    lp()

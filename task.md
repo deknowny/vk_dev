@@ -173,7 +173,7 @@ def func1(): pass
 
 @by.group()
 @command('time')
-@prefix('/')
+@prefix('.')
 @path.chat()
 @lp.message_new()
 def func2(): pass
@@ -375,14 +375,23 @@ def func2(event, pl): ...
 ```
 Набросок итогового класса
 ```python
+from vk_bot.cond import Condition, cond
+
 class Prefix(Condition): # Condition -- будущий класс-фабрика
     max_values = 0
+    true_one_time = True
 
-    def __call__(self, *args):
-        self._prefixes = args
+    @cond.call
+    def __call__(self, *prefixes):
+        self.i_will_use_this_only = prefixes
 
-        self.__call__ = self.call_handler
-        return self
+
+        ## Below chould be decorated
+        decor = self.__class__()
+        decor.args = prefixes
+        decor.__call__ = self.call_handler
+
+        return decor
 
     def code(self, event, pl):
         for i in self._prefixes:
@@ -397,14 +406,47 @@ prefix = Prefix()
 ```python
 from abc import ABC, abstractmethod, abstractproperty
 
-class Condition(object, ABC):
+class Condition(ABC):
 
     @abstractproperty
     def max_values(): pass
 
+    @abstractproperty
+    def true_one_time(): pass
+
     @abstractmethod
     def code(): pass
 
-    def call_handler(func): pass
+    def call_handler(self, func):
+        func.conds.update({self.})
+
+    def conf(self): pass
 
 ```
+```python
+def cond(func):
+
+
+```
+Поле `args` должно быть словарем.
+
+И так, итоговый пример дерева
+```python
+reactions = {
+    'message_new': {
+        'box': [
+            {
+                'cond': prefix,
+                True: {func1, func2}
+                False: {func3, func2}
+            }
+        ],
+        'reactions': [func1, func2, func3]
+    },
+    'wall_post_new'
+}
+
+```
+
+1) Я забыл, где создал 'reactions': [func1, func2, func3]
+2) Доделай. Прошу.
