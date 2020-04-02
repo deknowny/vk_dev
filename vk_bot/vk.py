@@ -3,7 +3,6 @@ from .tools import url, peer
 from .DotDict import DotDict
 
 import time
-from pprint import pprint
 
 import requests as r
 
@@ -22,7 +21,6 @@ class Auth:
         self.__init__(**kwargs)
 
         return Api(self), Handler(self)
-
 
     def __init__(self, token, v, group_id=0):
         self.token = token
@@ -138,7 +136,6 @@ class Handler:
                 )
 
 
-
 class LongPoll:
     """
     LongPoll scheme
@@ -159,7 +156,6 @@ class LongPoll:
         'wait': 25
     }
 
-
     def __init__(
             self, auth,
             faileds=[], **kwargs
@@ -171,9 +167,6 @@ class LongPoll:
         # self.start_settings['access_token'] = auth.token
         # self.start_settings['v'] = auth.v
         self.reaction_handlers = []
-
-
-
 
     def __getattr__(self, event_name):
         """
@@ -199,8 +192,6 @@ class LongPoll:
                 self.start_settings
             )
 
-
-
         while True:
             ## Lp events
 
@@ -221,115 +212,43 @@ class LongPoll:
             for update in self.lp['updates']:
                 self.event = DotDict(update)
                 if self.event.type in self.reactions:
-                    self.result = self._reactions_get()
-
+                    self._reactions_get()
                     self._reactions_call()
 
     def _reactions_call(self):
         """
         Call every reaction
         """
-        for reaction in self.result:
-            reaction(self.event, self.pl_dict[reaction])
+        for reaction, payload in self.results:
+            reaction(self.event, payload)
 
     def _reactions_get(self):
         """
-        Return list of needed funcs
+        Return list of needed funcs with payload
         """
-        info = self.reactions[self.event.type]
-        self.pl_dict = {}
+        self.results = []
+        for reaction in self.reactions[self.event.type]:
+            payload = reaction.pl_gen(self.event) if reaction.pl_gen is not None else None
 
-
-        ## ASYNC
-        ## Init payload
-        for reaction in info['reactions']:
-            self.pl_dict[reaction] = reaction.pl_gen(self.event) if reaction.pl_gen is not None else object()
-
-
-
-        if len(info['box']):
-            first = info['box'][0]['cond']
-
-            res = info['box'][0][first.code(self.event, self.pl_dict[first.func])]
-            print(res)
-
-            ## Find reactions
-            for exist in info['box']:
-                funcs = exist['cond'].code(self.event, self.pl_dict[first.func])
-                res = res & info['reactions']
-                print(res)
-
-                if not len(res):
-                    return []
-
-            return list(res)
-
-        else:
-            return list(info['reactions'])
+            for cond in reaction.conditions:
+                if not cond.code(self.event, payload):
+                    break
+            else:
+                self.results.append((reaction, payload))
 
     def _reactions_init(self):
         """
         Init reactions tree
         """
-        ## Condition tree
         reactions = {}
 
-        ## 1st step -- Create passports
         for handler in self.reaction_handlers:
-
             if handler.event_name not in reactions:
-                reactions[handler.event_name] = {
-                    'box': [],
-                    'reactions': set()
-                }
+                reactions[handler.event_name] = [handler.reaction]
+            else:
+                reactions[handler.event_name].append(handler.reaction)
 
-            ## List with `passports`
-            box = reactions[handler.event_name]['box']
-
-            for cond in handler.reaction.conditions:
-
-                added = False
-
-                for exist in box:
-
-                    if (hasattr(exist['cond'], 'conf_id') and
-                        exist['cond'].conf_id == cond.conf_id):
-                        exist[True].add(handler.reaction)
-                        added = True
-
-                if not added:
-                    box.append({
-                        'cond': cond,
-                        True: set([handler.reaction]),
-                        False: set()
-                    })
-        ## 2nd step -- fill `False` in passports
-
-        for handler in self.reaction_handlers:
-
-            for cond in handler.reaction.conditions:
-
-                for value in reactions.values():
-
-                    for exist in value['box']:
-                        print(exist['cond'], cond)
-                        #print(exist['cond'].conf_id, cond.conf_id)
-
-                        if not (
-                            exist['cond'] is cond or
-                            exist['cond'].conf_id == cond.conf_id
-                            ):
-
-                            exist[False].add(handler.reaction)
-
-        ## 3rd step -- fill `reactions`
-        for handler in self.reaction_handlers:
-            reactions[handler.event_name]['reactions'].add(handler.reaction)
-
-        ## Take it
-        pprint(reactions)
         self.reactions = reactions
-
 
     def _failed_handler(self):
         """
@@ -363,8 +282,6 @@ class LongPoll:
         elif self.lp['failed'] == 4:
             self.lp_settings['version'] = self.lp['max_version']
 
-
-
     def _method_name(self):
         """
         Choose method for users and groups
@@ -373,6 +290,7 @@ class LongPoll:
             return 'groups.getLongPollServer'
         else:
             return 'messages.getLongPollServer'
+
 
 class ReactionHandler:
     """
@@ -393,14 +311,13 @@ class ReactionHandler:
         """
         Called when it is decorating
         """
+
         self.__class__.__call__, self.__class__._reaction_decor =\
         self.__class__._reaction_decor, self.__class__.__call__
         self.reaction = func
 
         func.event_name = self.event_name
         func.conditions = []
-
         func.pl_gen = self.pl_gen
-
 
         return func

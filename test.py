@@ -1,5 +1,5 @@
 from vk_bot import (
-    Auth, Condition
+    Auth, Condition, peer
 )
 
 api, handler = Auth(
@@ -15,34 +15,43 @@ class Prefix(Condition):
     """
     Check how message start
     """
-    # max_values = 0
-    # true_one_time = True
 
-    def __call__(self, *prefixes):
+    def __init__(self, *prefixes):
         self._prefixes = prefixes
-        self._call_switch()
-
-        return self
 
     def code(self, event, pl):
+        print(event.object.message.text)
+
         if event.object.message.text.startswith(self._prefixes):
             return True
         return False
 
+class Path(Condition):
+    """
+    Path to writiing
+    """
 
+    def __init__(self, path):
+        self._path = path
 
-prefix = Prefix()
+    def code(self, event, pl):
+        if event.object.message.peer_id < peer:
+            return 'direct' == self._path
+        else:
+            return 'chat' == self._path
 
-@prefix('/')
-@lp.message_new()
+@Path('direct')
+@Prefix('.')
+@lp.message_new(lambda event: event.object.message.text)
 def react(event, pl):
     api.messages.send(
         peer_id=447532348,
-        message='Hello there',
+        message=f'Hello there. You said {pl}',
         random_id=0
     )
 
-@prefix('.')
+@Path('chat')
+@Prefix('/')
 @lp.message_new()
 def ree(event, pl):
     api.messages.send(
@@ -53,3 +62,23 @@ def ree(event, pl):
 
 if __name__ == '__main__':
     lp()
+
+
+# some = {'message_new': {
+#             'box': [
+#                 {
+#                     False: {<function ree at 0x7ffdc8098170>},
+#                     True: {<function react at 0x7ffdc8071d40>},
+#                     'cond': <__main__.Prefix object at 0x7ffdc8097650>
+#                 },
+#                 {
+#                     False: {<function react at 0x7ffdc8071d40>},
+#                     True: {<function ree at 0x7ffdc8098170>},
+#                     'cond': <__main__.Prefix object at 0x7ffdb80346d0>
+#                 }
+#             ],
+#              'reactions': {
+#                     <function react at 0x7ffdc8071d40>,
+#                     <function ree at 0x7ffdc8098170>}
+#                 }
+#         }
