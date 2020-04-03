@@ -8,7 +8,6 @@ api, handler = Auth(
     group_id=192979547
 )
 
-
 lp = handler.LongPoll()
 
 class Prefix(Condition):
@@ -20,8 +19,6 @@ class Prefix(Condition):
         self._prefixes = prefixes
 
     def code(self, event, pl):
-        print(event.object.message.text)
-
         if event.object.message.text.startswith(self._prefixes):
             return True
         return False
@@ -39,6 +36,31 @@ class Path(Condition):
             return 'direct' == self._path
         else:
             return 'chat' == self._path
+
+@Prefix('/kb')
+@lp.message_new()
+def keyboard(event, pl):
+    keyboard = {
+        'inline': True,
+        'buttons': [
+            [
+                {
+                    'action': {
+                        'type': 'text',
+                        'payload': '{}',
+                        'label': 'Some text'
+                    },
+                    'color': 'positive'
+                }
+            ]
+        ]
+    }
+    api.messages.send(
+        peer_id=447532348,
+        message='Your keyboard, sir.',
+        keyboard=handler.Keyboard(keyboard),
+        random_id=0
+    )
 
 @Path('direct')
 @Prefix('.')
@@ -62,23 +84,3 @@ def ree(event, pl):
 
 if __name__ == '__main__':
     lp()
-
-
-# some = {'message_new': {
-#             'box': [
-#                 {
-#                     False: {<function ree at 0x7ffdc8098170>},
-#                     True: {<function react at 0x7ffdc8071d40>},
-#                     'cond': <__main__.Prefix object at 0x7ffdc8097650>
-#                 },
-#                 {
-#                     False: {<function react at 0x7ffdc8071d40>},
-#                     True: {<function ree at 0x7ffdc8098170>},
-#                     'cond': <__main__.Prefix object at 0x7ffdb80346d0>
-#                 }
-#             ],
-#              'reactions': {
-#                     <function react at 0x7ffdc8071d40>,
-#                     <function ree at 0x7ffdc8098170>}
-#                 }
-#         }

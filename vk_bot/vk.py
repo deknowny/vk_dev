@@ -4,6 +4,8 @@ from .DotDict import DotDict
 
 import time
 import json
+import sys
+import asyncio
 
 import requests as r
 
@@ -29,7 +31,7 @@ class Auth:
         self.group_id = abs(group_id)
         self.type = self._type()
         self._last_request = time.time()
-        self._frezze_time = 1/3 if self.type == 'user' else 1/20
+        self._freeze_time = 1/3 if self.type == 'user' else 1/20
 
     def __call__(self, method, data):
         """
@@ -135,7 +137,8 @@ class Handler:
                         **kwargs
                     }
                 )
-
+    def Keyboard(self, kb):
+        return Keyboard(kb)
 
 class LongPoll:
     """
@@ -164,9 +167,6 @@ class LongPoll:
         self.auth = auth
         self.faileds = faileds
         self.start_settings = kwargs
-        print(self.start_settings)
-        # self.start_settings['access_token'] = auth.token
-        # self.start_settings['v'] = auth.v
         self.reaction_handlers = []
 
     def __getattr__(self, event_name):
@@ -192,6 +192,7 @@ class LongPoll:
                 self._method_name(),
                 self.start_settings
             )
+        print("\033[32mListening VK LongPoll...\033[0m")
 
         while True:
             ## Lp events
@@ -324,4 +325,13 @@ class ReactionHandler:
         return func
 
 class Keyboard:
+    """
+    Create VK Keyboard by dict
+    """
     def __init__(self, kb={}):
+        self.kb = kb
+
+    def __repr__(self):
+        kb = json.dumps(self.kb, ensure_ascii=False)
+        kb = kb.encode('utf-8').decode('utf-8')
+        return str(kb)
