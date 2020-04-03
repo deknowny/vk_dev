@@ -5,7 +5,6 @@ from .DotDict import DotDict
 import time
 import json
 import sys
-import asyncio
 
 import requests as r
 
@@ -192,7 +191,7 @@ class LongPoll:
                 self._method_name(),
                 self.start_settings
             )
-        print("\033[32mListening VK LongPoll...\033[0m")
+        print("""\033[32mListening VK LongPoll...\033[0m""")
 
         while True:
             ## Lp events
