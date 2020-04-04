@@ -1,7 +1,0 @@
-README.md
-setup.py
-vk_bot/__init__.py
-vk_bot_Jle4enka.egg-info/PKG-INFO
-vk_bot_Jle4enka.egg-info/SOURCES.txt
-vk_bot_Jle4enka.egg-info/dependency_links.txt
-vk_bot_Jle4enka.egg-info/top_level.txt

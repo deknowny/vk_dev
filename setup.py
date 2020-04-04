@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="vk-bot-Jle4enka",
-    version="0.0.1",
+    name="vk_dev",
+    version="0.1.3",
     author="Yan",
     author_email="deknowny@gmail.com",
     description="Package for creating VK bots",
@@ -18,5 +18,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    install_requires=open('requirements.txt').read().split('\n'),
     python_requires='>=3.6',
 )

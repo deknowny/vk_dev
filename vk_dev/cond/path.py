@@ -1,4 +1,4 @@
-from vk_bot import Condition, peer
+from vk_dev import Condition, peer
 
 class Path(Condition):
     """

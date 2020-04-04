@@ -1,4 +1,4 @@
-from vk_bot import Condition
+from vk_dev import Condition
 
 class Prefix(Condition):
     """

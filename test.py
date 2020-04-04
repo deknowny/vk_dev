@@ -1,13 +1,15 @@
-from vk_bot import (
+from vk_dev import (
     Auth, Condition, peer
 )
-import vk_bot
-from vk_bot.cond import (
+import vk_dev
+from vk_dev.cond import (
     Prefix, Path
 )
 
+import config as conf
+
 api, handler = Auth(
-    token='token',
+    token=conf.TOKEN,
     v=5.103,
     group_id=192979547
 )

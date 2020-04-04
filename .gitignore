@@ -1,2 +1,10 @@
 env/
-__pycahche__/
+__pycache__/
+.DS_Store
+config.py
+build/
+task.md
+test.py
+async_test.py
+dist/
+vk_dev.egg-info
