@@ -7,4 +7,4 @@ task.md
 test*.py
 async_test.py
 dist/
-vk_dev.egg-info
+vk_dev.egg-info/
