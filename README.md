@@ -1,6 +1,6 @@
 # vk_dev
 Localizations:
-* [README on Russian](../blob/master/README_RU.md)
+* [README on Russian](./README_RU.md)
 
 ## Info
 > *What true convenience is?*
