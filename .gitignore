@@ -1,11 +1,11 @@
 env/
 __pycache__/
-.DS_Store
 config.py
 build/
-task.md
-test.py
+# task.md
+# test.py
 test1.py
-async_test.py
+# async_test.py
 dist/
 vk_dev.egg-info/
+.DS_Store
