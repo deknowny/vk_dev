@@ -44,4 +44,4 @@ if __name__ == '__main__':
     lp()
 ```
 ## Documentation
-* Wiki *(will be added later)*
+* [Wiki](https://github.com/Rhinik/vk_dev/wiki)

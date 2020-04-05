@@ -41,4 +41,4 @@ if __name__ == '__main__':
 
 ```
 ## Документация
-* Wiki *(will be added later)*
+* [Wiki](https://github.com/Rhinik/vk_dev/wiki)
