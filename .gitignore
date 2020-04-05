@@ -9,3 +9,4 @@ async_test.py
 dist/
 vk_dev.egg-info/
 .DS_Store
+vk_dev_wiki/
