@@ -1,4 +1,8 @@
 # vk_dev
+Localizations:
+* [README on Russian](../blob/master/README_RU.md)
+
+## Info
 > *What true convenience is?*
 
 You have a lot of *doorways* to try amazing python package for developing with API VKontakte. By using the flavor of python this library let you write on readable style without complications when need write fast ~or when you are at 0 days~ and refactor your project conveniencly and with idea.
