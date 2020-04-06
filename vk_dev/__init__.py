@@ -4,4 +4,4 @@ from .vk import Auth, Keyboard
 from .exception import VkErr
 from .payload import payload
 from .DotDict import DotDict
-from .cond import *
+from vk_dev import cond

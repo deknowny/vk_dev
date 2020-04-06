@@ -5,6 +5,7 @@ from .DotDict import DotDict
 import time
 import json
 import sys
+from datetime import datetime as dt
 
 import requests as r
 
@@ -181,40 +182,65 @@ class LongPoll:
         """
         Init LongPoll listening
         """
-        ## Reactions tree
-        self._reactions_init()
-        ## Yours settings
-        self.lp_settings = {**(LongPoll.group_init if self.auth.type == 'group' else LongPoll.group_get), **kwargs} if default else kwargs
-        ## Intermediate lp params like server, ts and key
+        try:
+            ## Reactions tree
+            self._reactions_init()
+            ## Yours settings
+            self.lp_settings = {**(LongPoll.group_init if self.auth.type == 'group' else LongPoll.group_get), **kwargs} if default else kwargs
+            ## Intermediate lp params like server, ts and key
 
-        self.lp_info = self.auth(
-                self._method_name(),
-                self.start_settings
-            )
-        print("""\033[32mListening VK LongPoll...\033[0m""")
+            self.lp_info = self.auth(
+                    self._method_name(),
+                    self.start_settings
+                )
+            start_time = dt.now()
+            format_start = start_time.strftime("[%Y-%m-%d %H:%M:%S]")
+            print(f"\033[2m{format_start} \033[0m\033[32mListening VK LongPoll...\033[0m")
 
-        while True:
-            ## Lp events
+            ## Stats
+            events_get = 0
+            events_handled = 0
 
-            lp_get = {
-                'key': self.lp_info['key'],
-                'ts': self.lp_info['ts']
-            }
 
-            self.lp = r.post(
-                    url=self.lp_info['server'],
-                    data={**lp_get, **self.lp_settings, 'act': 'a_check'}
-                ).json()
+            while True:
+                ## Lp events
 
-            res = self._failed_handler()
-            if res is True:
-                continue
+                lp_get = {
+                    'key': self.lp_info['key'],
+                    'ts': self.lp_info['ts']
+                }
 
-            for update in self.lp['updates']:
-                self.event = DotDict(update)
-                if self.event.type in self.reactions:
-                    self._reactions_get()
-                    self._reactions_call()
+                self.lp = r.post(
+                        url=self.lp_info['server'],
+                        data={**lp_get, **self.lp_settings, 'act': 'a_check'}
+                    ).json()
+
+                res = self._failed_handler()
+                if res is True:
+                    continue
+
+                for update in self.lp['updates']:
+                    self.event = DotDict(update)
+                    events_get += 1
+                    if self.event.type in self.reactions:
+                        events_handled += 1
+                        self._reactions_get()
+                        self._reactions_call()
+        except KeyboardInterrupt as err:
+            end_time = dt.now()
+            dif = end_time - start_time
+            format_end = end_time.strftime("[%Y-%m-%d %H:%M:%S]")
+            print(f"\n\033[2m{format_end} \033[0m\033[33mListening has been stoped\033[0m")
+            print("Handled \033[36m%s\033[0m (\033[35m%.2f ps\033[0m)" % (
+                events_handled,
+                events_handled / dif.seconds
+            ))
+            print("Total \033[36m%s\033[0m (\033[35m%.2f ps\033[0m)" % (
+                events_get,
+                events_get / dif.seconds
+            ))
+            print(f"Taken \033[36m{dif}\033[0m")
+            exit()
 
     def _reactions_call(self):
         """
