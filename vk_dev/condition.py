@@ -1,6 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
+
 class Condition(ABC):
     """
     Inheriting gives you new decorators

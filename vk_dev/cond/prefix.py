@@ -1,5 +1,6 @@
 from vk_dev import Condition
 
+
 class Prefix(Condition):
     """
     Check how message start
@@ -10,6 +11,4 @@ class Prefix(Condition):
         self._prefixes = prefixes
 
     def code(self, event, pl):
-        if event.object.message.text.startswith(self._prefixes):
-            return True
-        return False
+        return event.object.message.text.startswith(self._prefixes)

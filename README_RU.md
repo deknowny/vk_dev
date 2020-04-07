@@ -16,24 +16,24 @@ api, handler = vk_dev.Auth(
     group_id=1234567890,
     v=5.103
 )
-lp = handler.LongPoll()
+lp = handler.longpoll()
 
-## Можно создать любой свой декоратор
+# Можно создать любой свой декоратор
 @vk_dev.cond.Path('direct')
 @vk_dev.cond.Prefix('/', '.')
 @lp.message_new()
-def reaction(event, pl):
+async def reaction(event, pl):
     """
     Эта функция сработает, если сообщение
     отправлено в лс и начинается с
     символов `/` или `.`
     """
 
-    ## Отправка ответа пользователю
-    api.messages.send(
+    # Отправка ответа пользователю
+    await api.messages.send(
         peer_id=event.object.message.peer_id,
         message='Hello there',
-        random_id=vk_dev.random_id()
+        random_id=0
     )
 
 if __name__ == '__main__':

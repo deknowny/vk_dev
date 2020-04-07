@@ -18,6 +18,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=open('vk_dev.egg-info/requires.txt').read().split('\n'),
+    install_requires=["aiohttp"],
     python_requires='>=3.6',
 )

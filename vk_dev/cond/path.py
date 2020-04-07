@@ -1,4 +1,5 @@
-from vk_dev import Condition, peer
+from vk_dev import Condition
+
 
 class Path(Condition):
     """
@@ -13,7 +14,6 @@ class Path(Condition):
         self._path = path
 
     def code(self, event, pl):
-        if event.object.message.peer_id < peer:
+        if event.object.message.peer_id < 2000000000:
             return 'direct' == self._path
-        else:
-            return 'chat' == self._path
+        return 'chat' == self._path

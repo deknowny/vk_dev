@@ -1,5 +1,5 @@
 from functools import wraps
-from .DotDict import DotDict
+from .dot_dict import DotDict
 
 def payload(func):
     """
