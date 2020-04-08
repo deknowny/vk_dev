@@ -11,18 +11,18 @@ $ pip3 install vk_dev
 ```python
 import vk_dev
 
-api, handler = vk_dev.Auth(
+api = vk_dev.Api(
     token='token',
-    group_id=1234567890,
+    group_id=192979547,
     v=5.103
 )
-lp = handler.LongPoll()
+lp = api >> vk_dev.LongPoll()
 
 ## Можно создать любой свой декоратор
 @vk_dev.cond.Path('direct')
 @vk_dev.cond.Prefix('/', '.')
 @lp.message_new()
-def reaction(event, pl):
+async def reaction(event, pl):
     """
     Эта функция сработает, если сообщение
     отправлено в лс и начинается с
@@ -30,7 +30,7 @@ def reaction(event, pl):
     """
 
     ## Отправка ответа пользователю
-    api.messages.send(
+    await api.messages.send(
         peer_id=event.object.message.peer_id,
         message='Hello there',
         random_id=vk_dev.random_id()
@@ -38,7 +38,6 @@ def reaction(event, pl):
 
 if __name__ == '__main__':
     lp()
-
 ```
 ## Документация
 * [Wiki](https://github.com/Rhinik/vk_dev/wiki)

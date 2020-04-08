@@ -15,18 +15,18 @@ pip3 install vk_dev
 ```python
 import vk_dev
 
-api, handler = vk_dev.Auth(
+api = vk_dev.Api(
     token='token',
     group_id=192979547,
     v=5.103
 )
-lp = handler.LongPoll()
+lp = api >> vk_dev.LongPoll()
 
 ## You can create own decorators
 @vk_dev.cond.Path('direct')
 @vk_dev.cond.Prefix('/', '.')
 @lp.message_new()
-def reaction(event, pl):
+async def reaction(event, pl):
     """
     This function will work if
     message was sended to direct and
@@ -34,7 +34,7 @@ def reaction(event, pl):
     """
 
     ## Send response to the interlocutor
-    api.messages.send(
+    await api.messages.send(
         peer_id=event.object.message.peer_id,
         message='Hello there',
         random_id=vk_dev.random_id()
