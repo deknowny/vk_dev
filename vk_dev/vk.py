@@ -10,7 +10,6 @@ from .exception import VkErr
 from .tools import peer
 from .dot_dict import DotDict
 
-import requests as r
 import aiohttp
 
 
