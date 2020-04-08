@@ -1,6 +1,6 @@
 from .condition import Condition
 from .tools import peer, random_id
-from .vk import Auth, Keyboard
+from .vk import Api, LongPoll, Keyboard, Button
 from .exception import VkErr
 from .payload import payload
 from .dot_dict import DotDict

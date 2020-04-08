@@ -1,6 +1,9 @@
 import time
 import json
 import sys
+import asyncio
+import ssl
+from typing import Union, Any, NoReturn, Optional
 from datetime import datetime as dt
 
 from .exception import VkErr
@@ -8,33 +11,50 @@ from .tools import peer
 from .dot_dict import DotDict
 
 import requests as r
+import aiohttp
 
 
-class Auth:
+class Api:
     """
-    Auth to vk by token.
-    Both for users and gropus
+    Make API requests and
+    API-helpers handler.
+
+    Contain main info like
+    access_token,
+    version and etc.
     """
-
-    def __new__(cls, **kwargs):
-        """
-        Return a tuple of API handlers
-        """
-        self = super().__new__(cls)
-        self.__init__(**kwargs)
-
-        return Api(self), Handler(self)
-
-    def __init__(self, token, v, group_id=0):
+    def __init__(
+            self,
+            token: str,
+            v: Union[str, float],
+            group_id: int = 0
+        ) -> None:
         self.url = 'https://api.vk.com/method/'
         self.token = token
         self.v = str(v)
         self.group_id = abs(group_id)
         self.type = 'group' if self.group_id else 'user'
+        self.session = aiohttp.ClientSession()
+        self.ssl = ssl.SSLContext()
         self._last_request_time = time.time()
         self._freeze_time = 1 / 3 if self.type == 'user' else 1 / 20
+        self._method = None
 
-    def __call__(self, method, data):
+    def __rshift__(self, cls):
+        cls.api = self
+        return cls
+
+    def __getattr__(self, value: str):
+        self.method = value
+        return self
+
+    async def __call__(self, **kwargs) -> DotDict:
+        """
+        Make every API requests
+        """
+        return await self.request(self.method, data=kwargs)
+
+    async def request(self, method: str, data: dict) -> DotDict:
         """
         Make every API requests
         """
@@ -43,38 +63,29 @@ class Auth:
             'v': self.v,
             **data
         }
+
         self._request_wait()
-        resp = r.post(url + method, api_data).json()
+
+        async with self.session.post(self.url + method, data=api_data, ssl=self.ssl) as r:
+            resp = await r.json()
 
         if 'error' in resp:
             raise VkErr(resp)
-
         else:
             if isinstance(resp['response'], dict):
                 return DotDict(resp['response'])
-
             return resp['response']
 
-    def _request_wait(self):
+    def _request_wait(self) -> None:
         """
         Pause between requests
         """
         now = time.time()
-        diff = now - self._last_request
+        diff = now - self._last_request_time
 
         if diff < self._freeze_time:
             time.sleep(self._freeze_time - diff)
-            self._last_request_time = now + self._last_request_time
-
-
-
-class Api:
-    """
-    For API requests by dot-syntax
-    """
-    def __init__(self, auth):
-        self.auth = auth
-        self._method = None
+            self._last_request_time = time.time()
 
     @property
     def method(self):
@@ -82,55 +93,17 @@ class Api:
         Method name
         """
     @method.getter
-    def method(self):
+    def method(self) -> str:
         res = self._method
         self._method = None
         return res
 
     @method.setter
-    def method(self, value):
+    def method(self, value: str) -> None:
         if self._method is None:
             self._method = value
         else:
             self._method += '.' + value
-
-    def __getattr__(self, value):
-        self.method = value
-        return self
-
-    def __call__(self, **kwargs):
-        """
-        Make request
-        """
-        return self.auth(self.method, kwargs)
-
-
-class Handler:
-    """
-    Handler usefull often used
-    API requests schemes, like
-    LongPoll, quickly photo uploading and etc.
-    """
-    def __init__(self, auth):
-        self.auth = auth
-
-    def LongPoll(self, default=True, faileds=[], **kwargs):
-        """
-        Init LongPoll
-        """
-        ## Get OUT
-        if self.auth.type == 'group':
-            LongPoll.group_get['group_id'] = self.auth.group_id
-        return LongPoll(
-                    self.auth,
-                    faileds=faileds,
-                    **{
-                        **((LongPoll.user_get if self.auth.type == 'user' else LongPoll.group_get) if default else {}),
-                        **kwargs
-                    }
-                )
-    def Keyboard(self, kb):
-        return Keyboard(kb)
 
 class LongPoll:
     """
@@ -142,8 +115,8 @@ class LongPoll:
     }
     user_init = {
         'wait': 25,
-        'mode': 8,
-        'version': 3
+        'mode': 234,
+        'version': 10
     }
     group_get = {
         # group_id
@@ -152,16 +125,12 @@ class LongPoll:
         'wait': 25
     }
 
-    def __init__(
-            self, auth,
-            faileds=[], **kwargs
-        ):
-        self.auth = auth
+    def __init__(self, faileds=[], default=True, **kwargs) -> None:
         self.faileds = faileds
         self.start_settings = kwargs
         self.reaction_handlers = []
 
-    def __getattr__(self, event_name):
+    def __getattr__(self, event_name: str):
         """
         Get handling event
         """
@@ -170,78 +139,96 @@ class LongPoll:
 
         return hand
 
-    def __call__(self, default=True, **kwargs):
+    async def _lp_start(self, default=True, **kwargs) -> NoReturn:
+
+        ## Reactions tree
+        self._reactions_init()
+
+        if self.api.type == 'group':
+            LongPoll.group_get['group_id'] = self.api.group_id
+
+        self.start_settings = {
+                **((LongPoll.user_get if self.api.type == 'user' else LongPoll.group_get) if default else {}),
+                **self.start_settings
+            }
+
+        ## Yours settings
+        self.lp_settings = {**(LongPoll.group_init if self.api.type == 'group' else LongPoll.group_get), **kwargs} if default else kwargs
+
+        ## Intermediate lp params like server, ts and key
+        self.lp_info = await self.api.request(
+                method=self._method_name(),
+                data=self.start_settings
+            )
+        self.start_time = dt.now()
+        self.format_start = self.start_time.strftime("[%Y-%m-%d %H:%M:%S]")
+        print(f"\033[2m{self.format_start} \033[0m\033[32mListening VK LongPoll...\033[0m")
+
+        ## Stats
+        self.events_get = 0
+        self.events_handled = 0
+
+
+        while True:
+            ## Lp events
+
+            lp_get = {
+                'key': self.lp_info['key'],
+                'ts': self.lp_info['ts']
+            }
+
+            data = {**lp_get, **self.lp_settings, 'act': 'a_check'}
+
+            async with self.api.session.post(self.lp_info['server'], data=data, ssl=self.api.ssl) as response:
+                self.lp = await response.json()
+
+            res = self._failed_handler()
+            if res is True:
+                continue
+
+            for update in self.lp['updates']:
+                self.event = DotDict(update)
+                self.events_get += 1
+                if self.event.type in self.reactions:
+                    self.events_handled += 1
+                    self._reactions_get()
+                    await self._reactions_call()
+
+    def __call__(self, default=True, **kwargs) -> NoReturn:
         """
         Init LongPoll listening
         """
         try:
-            ## Reactions tree
-            self._reactions_init()
-            ## Yours settings
-            self.lp_settings = {**(LongPoll.group_init if self.auth.type == 'group' else LongPoll.group_get), **kwargs} if default else kwargs
-            ## Intermediate lp params like server, ts and key
+            loop = asyncio.get_event_loop()
+            self.loop = loop
+            loop.create_task(self._lp_start(default, **kwargs))
+            loop.run_forever()
 
-            self.lp_info = self.auth(
-                    self._method_name(),
-                    self.start_settings
-                )
-            start_time = dt.now()
-            format_start = start_time.strftime("[%Y-%m-%d %H:%M:%S]")
-            print(f"\033[2m{format_start} \033[0m\033[32mListening VK LongPoll...\033[0m")
-
-            ## Stats
-            events_get = 0
-            events_handled = 0
-
-
-            while True:
-                ## Lp events
-
-                lp_get = {
-                    'key': self.lp_info['key'],
-                    'ts': self.lp_info['ts']
-                }
-
-                self.lp = r.post(
-                        url=self.lp_info['server'],
-                        data={**lp_get, **self.lp_settings, 'act': 'a_check'}
-                    ).json()
-
-                res = self._failed_handler()
-                if res is True:
-                    continue
-
-                for update in self.lp['updates']:
-                    self.event = DotDict(update)
-                    events_get += 1
-                    if self.event.type in self.reactions:
-                        events_handled += 1
-                        self._reactions_get()
-                        self._reactions_call()
         except KeyboardInterrupt as err:
             end_time = dt.now()
-            dif = end_time - start_time
+            dif = end_time - self.start_time
             format_end = end_time.strftime("[%Y-%m-%d %H:%M:%S]")
+
             print(f"\n\033[2m{format_end} \033[0m\033[33mListening has been stoped\033[0m")
             print("Handled \033[36m%s\033[0m (\033[35m%.2f ps\033[0m)" % (
-                events_handled,
-                events_handled / dif.seconds
+                self.events_handled,
+                self.events_handled / dif.seconds
             ))
             print("Total \033[36m%s\033[0m (\033[35m%.2f ps\033[0m)" % (
-                events_get,
-                events_get / dif.seconds
+                self.events_get,
+                self.events_get / dif.seconds
             ))
             print(f"Taken \033[36m{dif}\033[0m")
             exit()
 
-    def _reactions_call(self):
+    async def _reactions_call(self) -> None:
         """
         Call every reaction
         """
         for reaction, payload in self.results:
-            reaction(self.event, payload)
+            await reaction(self.event, payload)
 
-    def _reactions_get(self):
+    def _reactions_get(self) -> None:
         """
         Return list of needed funcs with payload
         """
@@ -255,7 +242,7 @@ class LongPoll:
             else:
                 self.results.append((reaction, payload))
 
-    def _reactions_init(self):
+    def _reactions_init(self) -> None:
         """
         Init reactions tree
         """
@@ -269,7 +256,7 @@ class LongPoll:
 
         self.reactions = reactions
 
-    def _failed_handler(self):
+    def _failed_handler(self) -> Union[bool, None]:
         """
         Catch lp faileds
         """
@@ -285,7 +272,7 @@ class LongPoll:
         else:
             self.lp_info['ts'] = self.lp['ts']
 
-    def _failed_resolving(self):
+    def _failed_resolving(self) -> None:
         """
         Resolve faileds problems
         """
@@ -301,11 +288,11 @@ class LongPoll:
         elif self.lp['failed'] == 4:
             self.lp_settings['version'] = self.lp['max_version']
 
-    def _method_name(self):
+    def _method_name(self) -> None:
         """
         Choose method for users and groups
         """
-        if self.auth.type == 'group':
+        if self.api.type == 'group':
             return 'groups.getLongPollServer'
         else:
             return 'messages.getLongPollServer'
@@ -315,10 +302,13 @@ class ReactionHandler:
     """
     Reactions Handler
     """
-    def __init__(self, event_name):
+    def __init__(self, event_name) -> None:
         self.event_name = event_name
 
     def __call__(self, pl_gen=None):
+        """
+        Take payload generator
+        """
         self.pl_gen = pl_gen
 
         self.__class__.__call__, self.__class__._reaction_decor =\
@@ -326,11 +316,10 @@ class ReactionHandler:
 
         return self
 
-    def _reaction_decor(self, func):
+    def _reaction_decor(self, func: Any) -> Any:
         """
         Called when it is decorating
         """
-
         self.__class__.__call__, self.__class__._reaction_decor =\
         self.__class__._reaction_decor, self.__class__.__call__
         self.reaction = func
@@ -343,12 +332,116 @@ class ReactionHandler:
 
 class Keyboard:
     """
-    Create VK Keyboard by dict
+    Create VK Keyboard by dict or buttons list
     """
-    def __init__(self, kb={}):
-        self.kb = kb
+    def __init__(self, kb: Optional[dict] = None, **kwargs) -> None:
+        if kb is None:
+            self.kb = {
+                **kwargs,
+                'buttons': [[]]
+            }
+        else:
+            self.kb = kb
 
-    def __repr__(self):
+    def __add__(self, button) -> None:
+        """
+        Add button to line
+        """
+
+        self.kb['buttons'][-1].append(button())
+
+    def __repr__(self) -> str:
+        """
+        Create for sending
+        """
         kb = json.dumps(self.kb, ensure_ascii=False)
         kb = kb.encode('utf-8').decode('utf-8')
         return str(kb)
+
+    def create(self, *buttons):
+        """
+        Create keyboard by Buttons object
+        """
+        for button in buttons:
+            if not isinstance(button, Button):
+                raise TypeError(f"Keyboard's buttons must be 'Button' instance, not '{type(button).__name__}'")
+
+            if button.info is None:
+                self.kb['buttons'].append([])
+            else:
+                self.kb['buttons'][-1].append(button.info)
+
+        return self
+
+
+class Button:
+    """
+    Keyboard button
+    """
+    def __init__(self, **kwargs):
+        self.info = {'action': {**kwargs}}
+
+    def positive(self):
+        """
+        Green button
+        """
+        self.info['color'] = 'positive'
+        return self
+
+    def negative(self):
+        """
+        Red button
+        """
+        self.info['color'] = 'negative'
+        return self
+
+    def secondary(self):
+        """
+        White button
+        """
+        self.info['color'] = 'secondary'
+        return self
+
+    def primary(self):
+        """
+        Blue button
+        """
+        self.info['color'] = 'primary'
+        return self
+
+    @classmethod
+    def _button_init(cls, **kwargs):
+        self = super().__new__(cls)
+        self.__init__(**kwargs)
+
+        return self
+
+    @classmethod
+    def line(cls):
+        """
+        Add Buttons line
+        """
+        self = cls._button_init()
+        self.info = None
+
+        return self
+
+    @classmethod
+    def text(cls, **kwargs):
+        return cls._button_init(type='text', **kwargs)
+
+    @classmethod
+    def open_link(cls, **kwargs):
+        return cls._button_init(type='open_link', **kwargs)
+
+    @classmethod
+    def location(cls, **kwargs):
+        return cls._button_init(type='location', **kwargs)
+
+    @classmethod
+    def vkpay(cls, **kwargs):
+        return cls._button_init(type='vkpay', **kwargs)
+
+    @classmethod
+    def open_app(cls, **kwargs):
+        return cls._button_init(type='open_app', **kwargs)
