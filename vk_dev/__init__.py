@@ -3,5 +3,5 @@ from .tools import peer, random_id
 from .vk import Auth, Keyboard
 from .exception import VkErr
 from .payload import payload
-from .DotDict import DotDict
+from .dot_dict import DotDict
 from vk_dev import cond

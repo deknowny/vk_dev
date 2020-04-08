@@ -1,11 +1,11 @@
-from .exception import VkErr
-from .tools import url, peer
-from .DotDict import DotDict
-
 import time
 import json
 import sys
 from datetime import datetime as dt
+
+from .exception import VkErr
+from .tools import peer
+from .dot_dict import DotDict
 
 import requests as r
 
@@ -26,12 +26,13 @@ class Auth:
         return Api(self), Handler(self)
 
     def __init__(self, token, v, group_id=0):
+        self.url = 'https://api.vk.com/method/'
         self.token = token
         self.v = str(v)
         self.group_id = abs(group_id)
-        self.type = self._type()
-        self._last_request = time.time()
-        self._freeze_time = 1/3 if self.type == 'user' else 1/20
+        self.type = 'group' if self.group_id else 'user'
+        self._last_request_time = time.time()
+        self._freeze_time = 1 / 3 if self.type == 'user' else 1 / 20
 
     def __call__(self, method, data):
         """
@@ -49,11 +50,10 @@ class Auth:
             raise VkErr(resp)
 
         else:
-            if type(resp['response']) == dict:
+            if isinstance(resp['response'], dict):
                 return DotDict(resp['response'])
 
-            else:
-                return resp['response']
+            return resp['response']
 
     def _request_wait(self):
         """
@@ -64,13 +64,8 @@ class Auth:
 
         if diff < self._freeze_time:
             time.sleep(self._freeze_time - diff)
-            self._last_request = now + self._freeze_time
+            self._last_request_time = now + self._last_request_time
 
-    def _type(self):
-        if self.group_id:
-            return 'group'
-        else:
-            return 'user'
 
 
 class Api:
@@ -94,11 +89,8 @@ class Api:
 
     @method.setter
     def method(self, value):
-
         if self._method is None:
             self._method = value
-
-
         else:
             self._method += '.' + value
 

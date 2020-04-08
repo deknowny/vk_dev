@@ -5,6 +5,7 @@ build/
 task.md
 test.py
 test1.py
+test2.py
 async_test.py
 dist/
 vk_dev.egg-info/
