@@ -324,7 +324,7 @@ class LongPoll:
                 return True
 
             else:
-                raise VkErr(str(self.lp))
+                raise VkErr(self.lp)
 
         else:
             self.lp_info['ts'] = self.lp['ts']
