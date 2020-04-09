@@ -3,6 +3,7 @@ import json
 import sys
 import asyncio
 import ssl
+import inspect
 from typing import Union, Any, NoReturn, Optional
 from datetime import datetime as dt
 
@@ -11,11 +12,87 @@ from .tools import peer
 from .dot_dict import DotDict
 
 import aiohttp
+import requests
 
 
-class Api:
+def no_api_wrapper(cls):
     """
-    Make API requests and
+    For NoApi only
+    """
+    return cls()
+
+class _Api:
+    """
+    For async and not API classes
+    """
+    def _error_check(self, resp: dict) -> Union[DotDict, Any]:
+        if 'error' in resp:
+            raise VkErr(resp)
+        else:
+            if isinstance(resp['response'], dict):
+                return DotDict(resp['response'])
+            return resp['response']
+
+    @property
+    def method(self) -> None:
+        """
+        Method name
+        """
+    @method.getter
+    def method(self) -> str:
+        res = self._method
+        self._method = None
+        return res
+
+    @method.setter
+    def method(self, value: str) -> None:
+        if self._method is None:
+            self._method = value
+        else:
+            self._method += '.' + value
+
+@no_api_wrapper
+class NoApi(_Api):
+    """
+    API requests without async
+    """
+    def __init__(self) -> None:
+        self._method = None
+
+    def __rrshift__(self, api: "Api") -> Union[DotDict, Any]:
+        self.api_data.update(
+            {
+            'access_token': api.token,
+            'v': api.v
+            }
+        )
+        r = requests.post(api.url + self.method, data=self.api_data)
+        resp = r.json()
+        return self._error_check(resp)
+
+
+    def __call__(self, **data) -> "NoApi":
+        self.api_data = data
+        return self
+
+    def __getattr__(self, value: str) -> "NoApi":
+        self.method = value
+        return self
+
+    def _request_wait(self) -> None:
+        """
+        Pause between requests
+        """
+        now = time.time()
+        diff = now - self._last_request_time
+
+        if diff < self._freeze_time:
+            time.sleep(self._freeze_time - diff)
+            self._last_request_time = time.time()
+
+class Api(_Api):
+    """
+    Make async API requests and
     API-helpers handler.
 
     Contain main info like
@@ -39,11 +116,7 @@ class Api:
         self._freeze_time = 1 / 3 if self.type == 'user' else 1 / 20
         self._method = None
 
-    def __rshift__(self, cls):
-        cls.api = self
-        return cls
-
-    def __getattr__(self, value: str):
+    def __getattr__(self, value: str) -> "Api":
         self.method = value
         return self
 
@@ -63,19 +136,14 @@ class Api:
             **data
         }
 
-        self._request_wait()
+        await self._request_wait()
 
         async with self.session.post(self.url + method, data=api_data, ssl=self.ssl) as r:
             resp = await r.json()
 
-        if 'error' in resp:
-            raise VkErr(resp)
-        else:
-            if isinstance(resp['response'], dict):
-                return DotDict(resp['response'])
-            return resp['response']
+        return self._error_check(resp)
 
-    def _request_wait(self) -> None:
+    async def _request_wait(self) -> None:
         """
         Pause between requests
         """
@@ -83,26 +151,9 @@ class Api:
         diff = now - self._last_request_time
 
         if diff < self._freeze_time:
-            time.sleep(self._freeze_time - diff)
+            await asyncio.sleep(self._freeze_time - diff)
             self._last_request_time = time.time()
 
-    @property
-    def method(self):
-        """
-        Method name
-        """
-    @method.getter
-    def method(self) -> str:
-        res = self._method
-        self._method = None
-        return res
-
-    @method.setter
-    def method(self, value: str) -> None:
-        if self._method is None:
-            self._method = value
-        else:
-            self._method += '.' + value
 
 class LongPoll:
     """
@@ -129,7 +180,11 @@ class LongPoll:
         self.start_settings = kwargs
         self.reaction_handlers = []
 
-    def __getattr__(self, event_name: str):
+    def __rrshift__(self, api):
+        self.api = api
+        return self
+
+    def __getattr__(self, event_name: str) -> "ReactionHandler":
         """
         Get handling event
         """
@@ -191,7 +246,7 @@ class LongPoll:
                 if self.event.type in self.reactions:
                     self.events_handled += 1
                     self._reactions_get()
-                    await self._reactions_call()
+                    self.loop.create_task(self._reactions_call())
 
     def __call__(self, default=True, **kwargs) -> NoReturn:
         """
@@ -203,7 +258,7 @@ class LongPoll:
             loop.create_task(self._lp_start(default, **kwargs))
             loop.run_forever()
 
-        except KeyboardInterrupt as err:
+        except KeyboardInterrupt:
             end_time = dt.now()
             dif = end_time - self.start_time
             format_end = end_time.strftime("[%Y-%m-%d %H:%M:%S]")
@@ -225,7 +280,10 @@ class LongPoll:
         Call every reaction
         """
         for reaction, payload in self.results:
-            await reaction(self.event, payload)
+            if inspect.iscoroutinefunction(reaction):
+                self.loop.create_task(reaction(self.event, payload))
+            else:
+                reaction(self.event, payload)
 
     def _reactions_get(self) -> None:
         """
@@ -357,7 +415,7 @@ class Keyboard:
         kb = kb.encode('utf-8').decode('utf-8')
         return str(kb)
 
-    def create(self, *buttons):
+    def create(self, *buttons) -> "Keyboard":
         """
         Create keyboard by Buttons object
         """
@@ -377,31 +435,31 @@ class Button:
     """
     Keyboard button
     """
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self.info = {'action': {**kwargs}}
 
-    def positive(self):
+    def positive(self) -> "Button":
         """
         Green button
         """
         self.info['color'] = 'positive'
         return self
 
-    def negative(self):
+    def negative(self) -> "Button":
         """
         Red button
         """
         self.info['color'] = 'negative'
         return self
 
-    def secondary(self):
+    def secondary(self) -> "Button":
         """
         White button
         """
         self.info['color'] = 'secondary'
         return self
 
-    def primary(self):
+    def primary(self) -> "Button":
         """
         Blue button
         """
@@ -409,14 +467,14 @@ class Button:
         return self
 
     @classmethod
-    def _button_init(cls, **kwargs):
+    def _button_init(cls, **kwargs) -> "Button":
         self = super().__new__(cls)
         self.__init__(**kwargs)
 
         return self
 
     @classmethod
-    def line(cls):
+    def line(cls) -> "Button":
         """
         Add Buttons line
         """
@@ -426,21 +484,21 @@ class Button:
         return self
 
     @classmethod
-    def text(cls, **kwargs):
+    def text(cls, **kwargs) -> "Button":
         return cls._button_init(type='text', **kwargs)
 
     @classmethod
-    def open_link(cls, **kwargs):
+    def open_link(cls, **kwargs) -> "Button":
         return cls._button_init(type='open_link', **kwargs)
 
     @classmethod
-    def location(cls, **kwargs):
+    def location(cls, **kwargs) -> "Button":
         return cls._button_init(type='location', **kwargs)
 
     @classmethod
-    def vkpay(cls, **kwargs):
+    def vkpay(cls, **kwargs) -> "Button":
         return cls._button_init(type='vkpay', **kwargs)
 
     @classmethod
-    def open_app(cls, **kwargs):
+    def open_app(cls, **kwargs) -> "Button":
         return cls._button_init(type='open_app', **kwargs)

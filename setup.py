@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="vk_dev",
-    version="2.0.0",
+    version="2.1.0",
     author="Yan",
     author_email="deknowny@gmail.com",
     description="Package for creating VK bots",
@@ -18,6 +18,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=['aiohttp==3.6.2'],
+    install_requires=['aiohttp==3.6.2', 'requests==2.23.0'],
     python_requires='>=3.6',
 )
