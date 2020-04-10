@@ -241,12 +241,12 @@ class LongPoll:
                 continue
 
             for update in self.lp['updates']:
-                self.event = DotDict(update)
+                event = DotDict(update)
                 self.events_get += 1
-                if self.event.type in self.reactions:
+                if event.type in self.reactions:
                     self.events_handled += 1
-                    self._reactions_get()
-                    self.loop.create_task(self._reactions_call())
+                    self.loop.create_task(self._reactions_get(event))
+                    # self.loop.create_task(self._reactions_call())
 
     def __call__(self, default=True, **kwargs) -> NoReturn:
         """
@@ -275,29 +275,40 @@ class LongPoll:
             print(f"Taken \033[36m{dif}\033[0m")
             exit()
 
-    async def _reactions_call(self) -> None:
+    async def _reactions_call(self, event, reaction) -> None:
         """
         Call every reaction
         """
-        for reaction, payload in self.results:
-            if inspect.iscoroutinefunction(reaction):
-                self.loop.create_task(reaction(self.event, payload))
-            else:
-                reaction(self.event, payload)
+        if reaction.pl_gen is None:
+            payload = None
+        elif inspect.iscoroutinefunction(reaction.pl_gen):
+            payload = await reaction.pl_gen(event)
+        else:
+            payload = reaction.pl_gen(event)
 
-    def _reactions_get(self) -> None:
+        for cond in reaction.conditions:
+            if inspect.iscoroutinefunction(cond.code):
+                res = await cond.code(event, payload)
+                if not res:
+                    break
+            else:
+                if not cond.code(event, payload):
+                    break
+        else:
+            if inspect.iscoroutinefunction(reaction):
+                self.loop.create_task(reaction(event, payload))
+
+            else:
+                reaction(event, payload)
+
+
+    async def _reactions_get(self, event) -> None:
         """
         Return list of needed funcs with payload
         """
-        self.results = []
-        for reaction in self.reactions[self.event.type]:
-            payload = reaction.pl_gen(self.event) if reaction.pl_gen is not None else None
+        for reaction in self.reactions[event.type]:
+            self.loop.create_task(self._reactions_call(event, reaction))
 
-            for cond in reaction.conditions:
-                if not cond.code(self.event, payload):
-                    break
-            else:
-                self.results.append((reaction, payload))
 
     def _reactions_init(self) -> None:
         """

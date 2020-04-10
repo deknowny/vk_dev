@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="vk_dev",
-    version="2.1.1",
+    version="2.1.2",
     author="Yan",
     author_email="deknowny@gmail.com",
     description="Package for creating VK bots",
