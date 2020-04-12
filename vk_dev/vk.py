@@ -175,7 +175,7 @@ class LongPoll:
         'wait': 25
     }
 
-    def __init__(self, faileds=[], default=True, **kwargs) -> None:
+    def __init__(self, faileds=[1, 2, 3, 4], default=True, **kwargs) -> None:
         self.faileds = faileds
         self.start_settings = kwargs
         self.reaction_handlers = []
@@ -222,7 +222,6 @@ class LongPoll:
         self.events_get = 0
         self.events_handled = 0
 
-
         while True:
             ## Lp events
 
@@ -236,7 +235,7 @@ class LongPoll:
             async with self.api.session.post(self.lp_info['server'], data=data, ssl=self.api.ssl) as response:
                 self.lp = await response.json()
 
-            res = self._failed_handler()
+            res = await self._failed_handler()
             if res is True:
                 continue
 
@@ -324,14 +323,14 @@ class LongPoll:
 
         self.reactions = reactions
 
-    def _failed_handler(self) -> Union[bool, None]:
+    async def _failed_handler(self) -> Union[bool, None]:
         """
         Catch lp faileds
         """
         if 'failed' in self.lp:
 
             if self.lp['failed'] in self.faileds:
-                self._failed_resolving()
+                await self._failed_resolving()
                 return True
 
             else:
@@ -340,7 +339,7 @@ class LongPoll:
         else:
             self.lp_info['ts'] = self.lp['ts']
 
-    def _failed_resolving(self) -> None:
+    async def _failed_resolving(self) -> None:
         """
         Resolve faileds problems
         """
@@ -348,7 +347,7 @@ class LongPoll:
             self.lp_info['ts'] = self.lp['ts']
 
         elif self.lp['failed'] in (2, 3):
-            self.lp_info = self.auth(
+            self.lp_info = await self.api.request(
                     self._method_name(),
                     self.start_settings
                 )

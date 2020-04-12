@@ -11,12 +11,11 @@ class VkErr(Exception):
     lp_handler_text = ". \033[33mYou can use auto LP faileds handler in LongPoll class\033[0m"
     def __init__(self, text):
         self.text = self._text_init(text)
-        print(self.text)
 
     def _text_init(self, text):
         if isinstance(text, dict):
             if "failed" in text:
-                return self.lp_faileds[text["failed"]] + lp_handler_text
+                return self.lp_faileds[text["failed"]] + self.lp_handler_text
 
             elif 'error' in text:
 
