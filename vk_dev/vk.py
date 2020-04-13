@@ -27,7 +27,7 @@ class _Api:
     """
     def _error_check(self, resp: dict) -> Union[DotDict, Any]:
         if 'error' in resp:
-            raise VkErr(resp)
+            raise VkErr(VkErr.text_init(resp))
         else:
             if isinstance(resp['response'], dict):
                 return DotDict(resp['response'])
@@ -110,7 +110,6 @@ class Api(_Api):
         self.v = str(v)
         self.group_id = abs(group_id)
         self.type = 'group' if self.group_id else 'user'
-        self.session = aiohttp.ClientSession()
         self.ssl = ssl.SSLContext()
         self._last_request_time = time.time()
         self._freeze_time = 1 / 3 if self.type == 'user' else 1 / 20
@@ -138,8 +137,9 @@ class Api(_Api):
 
         await self._request_wait()
 
-        async with self.session.post(self.url + method, data=api_data, ssl=self.ssl) as r:
-            resp = await r.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self.url + method, data=api_data, ssl=self.ssl) as r:
+                resp = await r.json()
 
         return self._error_check(resp)
 
@@ -207,7 +207,9 @@ class LongPoll:
             }
 
         ## Yours settings
-        self.lp_settings = {**(LongPoll.group_init if self.api.type == 'group' else LongPoll.group_get), **kwargs} if default else kwargs
+        self.lp_settings = {
+            **(LongPoll.group_init if self.api.type == 'group' else LongPoll.group_get), **kwargs
+        } if default else kwargs
 
         ## Intermediate lp params like server, ts and key
         self.lp_info = await self.api.request(
@@ -232,8 +234,9 @@ class LongPoll:
 
             data = {**lp_get, **self.lp_settings, 'act': 'a_check'}
 
-            async with self.api.session.post(self.lp_info['server'], data=data, ssl=self.api.ssl) as response:
-                self.lp = await response.json()
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.lp_info['server'], data=data, ssl=self.api.ssl) as response:
+                    self.lp = await response.json()
 
             res = await self._failed_handler()
             if res is True:
@@ -244,18 +247,14 @@ class LongPoll:
                 self.events_get += 1
                 if event.type in self.reactions:
                     self.events_handled += 1
-                    self.loop.create_task(self._reactions_get(event))
-                    # self.loop.create_task(self._reactions_call())
+                    asyncio.create_task(self._reactions_get(event))
 
     def __call__(self, default=True, **kwargs) -> NoReturn:
         """
         Init LongPoll listening
         """
         try:
-            loop = asyncio.get_event_loop()
-            self.loop = loop
-            loop.create_task(self._lp_start(default, **kwargs))
-            loop.run_forever()
+            asyncio.run(self._lp_start(default, **kwargs))
 
         except KeyboardInterrupt:
             end_time = dt.now()
@@ -272,7 +271,10 @@ class LongPoll:
                 self.events_get / dif.seconds
             ))
             print(f"Taken \033[36m{dif}\033[0m")
+
+            ## The End
             exit()
+
 
     async def _reactions_call(self, event, reaction) -> None:
         """
@@ -295,7 +297,7 @@ class LongPoll:
                     break
         else:
             if inspect.iscoroutinefunction(reaction):
-                self.loop.create_task(reaction(event, payload))
+                asyncio.create_task(reaction(event, payload))
 
             else:
                 reaction(event, payload)
@@ -306,7 +308,7 @@ class LongPoll:
         Return list of needed funcs with payload
         """
         for reaction in self.reactions[event.type]:
-            self.loop.create_task(self._reactions_call(event, reaction))
+            asyncio.create_task(self._reactions_call(event, reaction))
 
 
     def _reactions_init(self) -> None:
@@ -334,7 +336,7 @@ class LongPoll:
                 return True
 
             else:
-                raise VkErr(self.lp)
+                raise VkErr(VkErr.text_init(self.lp))
 
         else:
             self.lp_info['ts'] = self.lp['ts']
