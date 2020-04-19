@@ -1,12 +1,12 @@
 from vk_dev import Condition
 
+
 class Prefix(Condition):
     """
     Check how message start
-    *prefixes: str
     """
 
-    def __init__(self, *prefixes):
+    def __init__(self, *prefixes: str):
         self._prefixes = prefixes
 
     def code(self, event, pl):

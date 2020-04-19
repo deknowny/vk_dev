@@ -1,4 +1,7 @@
 # vk_dev
+[![PyPI version](https://badge.fury.io/py/vk-dev.svg)](https://badge.fury.io/py/vk-dev)
+[![Downloads](https://pepy.tech/badge/vk-dev/week)](https://pepy.tech/project/vk-dev/week)
+
 ## Информация
 > *Что такое удобство на самом деле?*
 

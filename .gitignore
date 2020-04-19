@@ -7,8 +7,12 @@ test.py
 test1.py
 test2.py
 test3.py
+test4.py
+changes.md
 async_test.py
 dist/
 vk_dev.egg-info/
 .DS_Store
 vk_dev_wiki/
+tests/
+__main__.py

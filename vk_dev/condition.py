@@ -1,11 +1,13 @@
 import uuid
+from typing import Callable, Awaitable, Union
 from abc import ABC, abstractmethod
+
 
 class Condition(ABC):
     """
     Inheriting gives you new decorators
     """
-    def __call__(self, func):
+    def __call__(self, func) -> Union[Callable[[str, str], None], Callable[[str, str], Awaitable[None]]]:
         self.uuid = uuid.uuid4().hex
         self.func = func
         func.conditions.append(self)
@@ -15,7 +17,7 @@ class Condition(ABC):
         return func
 
     @abstractmethod
-    def code(self, event, pl):
+    def code(self, event, pl) -> bool:
         """
         Code that should return True/False.
         Calling with LP event and payload.

@@ -1,11 +1,16 @@
 import setuptools
 
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+dependeces = [
+    'aiohttp==3.6.2'
+]
+
 setuptools.setup(
     name="vk_dev",
-    version="2.1.4",
+    version="3.0.0",
     author="Yan",
     author_email="deknowny@gmail.com",
     description="Package for creating VK bots",
@@ -18,6 +23,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=['aiohttp==3.6.2', 'requests==2.23.0'],
+    install_requires=dependeces,
     python_requires='>=3.6',
 )
