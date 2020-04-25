@@ -15,8 +15,6 @@ from .exception import VkErr
 from .dot_dict import DotDict
 
 
-
-
 class Api:
     """
     Make async API requests and
@@ -30,16 +28,15 @@ class Api:
             self,
             token: str,
             v: Union[str, float],
-            group_id: int = 0
+            group_id: int = None
         ) -> None:
         self.url = 'https://api.vk.com/method/'
         self.token = token
         self.v = str(v)
-        self.group_id = abs(group_id)
-        self.type = 'group' if self.group_id else 'user'
+        self.group_id = abs(group_id) if group_id is not None else group_id
         self.ssl = ssl.SSLContext()
         self._last_request_time = time.time()
-        self._freeze_time = 1 / 3 if self.type == 'user' else 1 / 20
+        self._freeze_time = 0.05
         self._method = None
 
     def __getattr__(self, value: str) -> Api:
@@ -117,15 +114,6 @@ class LongPoll:
     """
     LongPoll scheme
     """
-    user_get = {
-        'need_pts': False,
-        'lp_version': 3
-    }
-    user_init = {
-        'wait': 25,
-        'mode': 234,
-        'version': 10
-    }
     group_get = {
         # group_id
     }
@@ -133,7 +121,7 @@ class LongPoll:
         'wait': 25
     }
 
-    def __init__(self, faileds=[1, 2, 3, 4], default=True, **kwargs) -> None:
+    def __init__(self, faileds=[1, 2, 3], default=True, **kwargs) -> None:
         self.faileds = faileds
         self.start_settings = kwargs
         self.reaction_handlers = []
@@ -159,15 +147,12 @@ class LongPoll:
         # Reactions tree
         self._reactions_init()
 
-        if self.api.type == 'group':
-            LongPoll.group_get['group_id'] = self.api.group_id
+        LongPoll.group_get['group_id'] = self.api.group_id
 
         self.start_settings = {
                 **(
                     (
-                        LongPoll.user_get
-                        if self.api.type == 'user'
-                        else LongPoll.group_get
+                        LongPoll.group_get
                     ) if default else {}
                 ),
                 **self.start_settings
@@ -175,17 +160,13 @@ class LongPoll:
 
         # Yours settings
         self.lp_settings = {
-            **(
-                LongPoll.group_init
-                if self.api.type == 'group'
-                else LongPoll.group_get
-            ),
+            **LongPoll.group_init,
             **kwargs
         } if default else kwargs
 
         # Intermediate lp params like server, ts and key
         self.lp_info = await self.api.request(
-                method=self._method_name(),
+                method='groups.getLongPollServer',
                 data=self.start_settings
             )
         self.start_time = dt.now()
@@ -214,8 +195,8 @@ class LongPoll:
                 ) as response:
                     self.lp = await response.json()
 
-            res = await self._failed_handler()
-            if res is True:
+            error = await self._failed_handler()
+            if error is True:
                 continue
 
             for update in self.lp['updates']:
@@ -230,6 +211,14 @@ class LongPoll:
         Init LongPoll listening
         """
         try:
+            # Check `api >>` was
+            if not hasattr(self, 'api'):
+                raise ValueError("API config not founded. Make sure you use `api >> ` before LongPoll assignment")
+
+            # Check it's a group 
+            if self.api.group_id is None:
+                raise ValueError("Can't use user's token for LongPoll now :(")
+
             # Infinity corutine
             asyncio.run(self._lp_start(default, **kwargs))
 
@@ -322,17 +311,6 @@ class LongPoll:
                     self._method_name(),
                     self.start_settings
                 )
-        elif self.lp['failed'] == 4:
-            self.lp_settings['version'] = self.lp['max_version']
-
-    def _method_name(self) -> None:
-        """
-        Choose method for users and groups
-        """
-        if self.api.type == 'group':
-            return 'groups.getLongPollServer'
-        else:
-            return 'messages.getLongPollServer'
 
 
 class _ReactionHandler:
