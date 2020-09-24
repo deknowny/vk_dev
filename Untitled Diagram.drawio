@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2020-09-24T20:52:21.945Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Safari/605.1.15" etag="XwKdV_ZH4HQSFd4GTAJM" version="13.7.5" type="github">
+<mxfile host="app.diagrams.net" modified="2020-09-24T20:56:03.950Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Safari/605.1.15" etag="zbwfZ6J6858Asfaq8o3H" version="13.7.5" type="github">
   <diagram id="R2lEEEUBdFMjLlhIrx00" name="Page-1">
-    <mxGraphModel dx="6291" dy="2671" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
+    <mxGraphModel dx="5133" dy="1503" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -132,7 +132,7 @@
         <mxCell id="QizWD92erUkwesUpK60B-95" value="One interface" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="465" y="220" width="80" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="QizWD92erUkwesUpK60B-111" value="&lt;h1&gt;Command&lt;/h1&gt;&lt;p&gt;Have more abilities. It is subclass of the EventHandler&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+        <mxCell id="QizWD92erUkwesUpK60B-111" value="&lt;h1&gt;Command&lt;/h1&gt;&lt;p&gt;Has more abilities. It is subclass of the EventHandler&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="-920" y="1857" width="170" height="90" as="geometry" />
         </mxCell>
         <mxCell id="QizWD92erUkwesUpK60B-230" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.855;exitY=0;exitDx=0;exitDy=4.35;exitPerimeter=0;strokeWidth=1;dashed=1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-112">
@@ -183,14 +183,11 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="QizWD92erUkwesUpK60B-135" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=1 1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="QizWD92erUkwesUpK60B-152">
+        <mxCell id="QizWD92erUkwesUpK60B-135" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=1 1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-232" target="QizWD92erUkwesUpK60B-152">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="-1580" y="2400" as="sourcePoint" />
             <mxPoint x="-1040" y="2530" as="targetPoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="QizWD92erUkwesUpK60B-134" value="Command filter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-          <mxGeometry x="-1180" y="2037" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="QizWD92erUkwesUpK60B-143" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-140" target="QizWD92erUkwesUpK60B-144">
           <mxGeometry relative="1" as="geometry">
@@ -210,7 +207,7 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="QizWD92erUkwesUpK60B-176" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-140" target="QizWD92erUkwesUpK60B-177">
+        <mxCell id="QizWD92erUkwesUpK60B-176" value="Arguments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-140" target="QizWD92erUkwesUpK60B-177">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="-910" y="2600" as="targetPoint" />
           </mxGeometry>
@@ -227,11 +224,6 @@
         <mxCell id="QizWD92erUkwesUpK60B-172" value="Event" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="QizWD92erUkwesUpK60B-171">
           <mxGeometry x="0.6102" y="1" relative="1" as="geometry">
             <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="QizWD92erUkwesUpK60B-174" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-141" target="QizWD92erUkwesUpK60B-175">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="-315" y="2600" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="QizWD92erUkwesUpK60B-180" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-141" target="QizWD92erUkwesUpK60B-178">
@@ -342,11 +334,11 @@
         <mxCell id="QizWD92erUkwesUpK60B-168" value="Command filter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
           <mxGeometry x="-20" y="2390" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="QizWD92erUkwesUpK60B-175" value="function" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="-350" y="2590" width="120" height="60" as="geometry" />
+        <mxCell id="QizWD92erUkwesUpK60B-234" value="Message" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;dashed=1;strokeWidth=1;dashPattern=1 1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-177" target="QizWD92erUkwesUpK60B-140">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="QizWD92erUkwesUpK60B-177" value="function" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="-950" y="2600" width="120" height="60" as="geometry" />
+          <mxGeometry x="-950" y="2640" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="QizWD92erUkwesUpK60B-205" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;dashed=1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-178">
           <mxGeometry relative="1" as="geometry">
@@ -390,6 +382,23 @@
         </mxCell>
         <mxCell id="QizWD92erUkwesUpK60B-214" value="&lt;h1&gt;EventHandler&lt;/h1&gt;&lt;p&gt;Simple event handler&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;glass=0;" vertex="1" parent="1">
           <mxGeometry x="-300" y="1027" width="210" height="133" as="geometry" />
+        </mxCell>
+        <mxCell id="QizWD92erUkwesUpK60B-232" value="Command filter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="-1710" y="2370" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="QizWD92erUkwesUpK60B-235" value="Arguments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" target="QizWD92erUkwesUpK60B-237" source="QizWD92erUkwesUpK60B-141">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-300" y="2610" as="targetPoint" />
+            <mxPoint x="-310" y="2470" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QizWD92erUkwesUpK60B-236" value="Message" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;dashed=1;strokeWidth=1;dashPattern=1 1;" edge="1" parent="1" source="QizWD92erUkwesUpK60B-237" target="QizWD92erUkwesUpK60B-141">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-250" y="2470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QizWD92erUkwesUpK60B-237" value="function" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-350" y="2640" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
